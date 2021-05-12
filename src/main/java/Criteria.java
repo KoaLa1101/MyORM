@@ -35,9 +35,6 @@ public class Criteria {
         return true;
     }
 
-    public ArrayList<String> getValues() {
-        return values;
-    }
 
 
 }

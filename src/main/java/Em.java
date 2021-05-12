@@ -32,7 +32,7 @@ public class Em {
         System.out.println(em.findBy(tableName, Entity.class, criteriaBuilder.build()));
     }
 
-    public <T, ID> T findById(String tableName, Class<T> resultType, Class<ID> idType, ID idVal) {
+    public <T, ID> T findById(String tableName, Class<T> resultType, ID idVal) {
         SQL = "SELECT * FROM ";
         stringBuilder.append(SQL).append(tableName).append(" WHERE id =?");
         try (Connection connection = dataSource.getConnection()) {
@@ -59,7 +59,7 @@ public class Em {
         }
     }
 
-    public <T, ID> List<T> findAll(String tableName, Class<T> resultType, Class<ID> idType) {
+    public <T, ID> List<T> findAll(String tableName, Class<T> resultType) {
         List<T> arrayList = new ArrayList<>();
         SQL = "SELECT * FROM ";
 
@@ -125,7 +125,6 @@ public class Em {
     }
 
     public <T, ID> List<T> findBy(String tableName, Class<T> resultType, Criteria criteria) {
-        // constructing sql query
         String sqlQuery = buildQuery(tableName, criteria);
         return processQuery(sqlQuery, resultType, criteria);
     }
