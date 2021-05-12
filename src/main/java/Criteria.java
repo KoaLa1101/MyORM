@@ -35,10 +35,6 @@ public class Criteria {
         return true;
     }
 
-    public String getPreparedStatement() {
-        return field.toString();
-    }
-
     public ArrayList<String> getValues() {
         return values;
     }
