@@ -27,8 +27,9 @@ public class Em {
         entity.setName("PONG");
         String tableName = "entity";
         CriteriaBuilder criteriaBuilder = new CriteriaBuilder("id", "2");
-        criteriaBuilder.and("name", "PING");
+        /*criteriaBuilder.and("name", "PING");*/
         criteriaBuilder.or("name", "PONG");
+        em.emInsert(tableName, entity);
         System.out.println(em.findBy(tableName, Entity.class, criteriaBuilder.build()));
     }
 
@@ -125,18 +126,8 @@ public class Em {
     }
 
     public <T, ID> List<T> findBy(String tableName, Class<T> resultType, Criteria criteria) {
-        String sqlQuery = buildQuery(tableName, criteria);
-        return processQuery(sqlQuery, resultType, criteria);
-    }
 
-    public static String buildQuery(String tableName, Criteria criteria) {
-        String SQL_FIND = "SELECT * FROM ";
-        return SQL_FIND + tableName.trim() + criteria.getField();
-    }
-
-
-    public <T, ID> List<T> processQuery(String sqlQuery, Class<T> resultType, Criteria criteria) {
-
+        String sqlQuery ="SELECT * FROM " + tableName + criteria.getField();
         System.out.println("QUERY = " + sqlQuery);
         try (Connection connection = dataSource.getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
