@@ -11,10 +11,11 @@ import java.util.List;
 
 public class Em {
     private ResultSet resultSet;
-    private DataSource dataSource;
+    private final DataSource dataSource;
     private PreparedStatement preparedStatement;
     private StringBuilder stringBuilder;
     private String SQL;
+    private Method m;
 
     public Em(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -43,7 +44,6 @@ public class Em {
             resultSet = preparedStatement.executeQuery();
             resultSet.next();
             T result = resultType.newInstance();
-            Method m;
             for (Field i : resultType.getDeclaredFields()) {
                 StringBuilder toChange = new StringBuilder();
                 toChange.append(i.getName());
@@ -60,35 +60,40 @@ public class Em {
         }
     }
 
-    public <T, ID> List<T> findAll(String tableName, Class<T> resultType) {
+    public <T> List<T> findAll(String tableName, Class<T> resultType) {
         List<T> arrayList = new ArrayList<>();
         SQL = "SELECT * FROM ";
 
         stringBuilder.append(SQL).append(tableName);
         try (Connection connection = dataSource.getConnection()) {
             preparedStatement = connection.prepareStatement(stringBuilder.toString());
-            System.out.println(preparedStatement);
             resultSet = preparedStatement.executeQuery();
-            Method m;
-            while (resultSet.next()) {
-                T result = resultType.newInstance();
-                for (Field i : resultType.getDeclaredFields()) {
-                    StringBuilder toChange = new StringBuilder();
-                    toChange.append(i.getName());
-                    toChange.setCharAt(0, Character.toUpperCase(toChange.charAt(0)));
-
-                    m = resultType.getMethod("set" + toChange, i.getType());
-                    m.invoke(result, resultSet.getObject(i.getName()));
-                }
-                stringBuilder.delete(0, stringBuilder.length());
-                arrayList.add(result);
-            }
+            arrayList = setterForFind(resultSet, arrayList, resultType);
             return arrayList;
-        } catch (SQLException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException throwables) {
+        } catch (SQLException throwables) {
             throwables.printStackTrace();
             return null;
         }
 
+    }
+
+    public <T> List<T> findBy(String tableName, Class<T> resultType, Criteria criteria) {
+
+        String sqlQuery = "SELECT * FROM " + tableName + criteria.getField();
+        try (Connection connection = dataSource.getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
+            for (int i = 0; i < criteria.getValues().size(); i++) {
+                preparedStatement.setObject(i + 1, criteria.getValues().get(i));
+            }
+            ResultSet resultSet = preparedStatement.executeQuery();
+            List<T> arrayList = new ArrayList<>();
+
+            arrayList = setterForFind(resultSet, arrayList, resultType);
+            return arrayList;
+
+        } catch (SQLException throwables) {
+            throw new IllegalStateException(throwables);
+        }
     }
 
     public void emInsert(String tableName, Object entity) {
@@ -106,8 +111,6 @@ public class Em {
                 i.setAccessible(false);
 
             }
-            System.out.println(stringBuilder);
-            System.out.println(tempSB);
             stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length());
             stringBuilder.append(") VALUES (");
             tempSB.delete(tempSB.length() - 2, tempSB.length());
@@ -125,20 +128,9 @@ public class Em {
 
     }
 
-    public <T, ID> List<T> findBy(String tableName, Class<T> resultType, Criteria criteria) {
 
-        String sqlQuery ="SELECT * FROM " + tableName + criteria.getField();
-        System.out.println("QUERY = " + sqlQuery);
-        try (Connection connection = dataSource.getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            for (int i = 0; i < criteria.getValues().size(); i++) {
-                preparedStatement.setObject(i+1, criteria.getValues().get(i));
-            }
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            List<T> arrayList = new ArrayList<>();
-
-            Method m;
+    public <T> List<T> setterForFind(ResultSet resultSet, List<T> arrayList, Class<T> resultType) {
+        try {
             while (resultSet.next()) {
                 T result = resultType.newInstance();
                 for (Field i : resultType.getDeclaredFields()) {
@@ -152,12 +144,11 @@ public class Em {
                 stringBuilder.delete(0, stringBuilder.length());
                 arrayList.add(result);
             }
-
-            return arrayList;
-
         } catch (SQLException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException throwables) {
             throw new IllegalStateException(throwables);
         }
+
+        return arrayList;
     }
 
 }

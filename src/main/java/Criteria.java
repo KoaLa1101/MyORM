@@ -22,18 +22,11 @@ public class Criteria {
     }
 
     public boolean add(String condition, String columnName, String value) {
-        if (!check(columnName, value)) return false;
-
         field.append(condition).append(columnName).append("=?");
         values.add(value);
         return true;
     }
 
-    private boolean check(String columnName, String value) {
-        if (columnName == null || value == null) return false;
-        if (columnName.isEmpty() || value.isEmpty()) return false;
-        return true;
-    }
 
 
 
